@@ -1,0 +1,69 @@
+import pyrebase
+import RPi.GPIO as GPIO    #importarea librăriilor necesare
+from time import sleep
+import cv2
+from pyzbar.pyzbar import decode
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(17, GPIO.IN) #inițializarea pinului 17 ca pin de intrare
+GPIO.setup(27, GPIO.IN) #inițializarea pinului 27 ca pin de intrare
+GPIO.setup(13, GPIO.OUT) #inițializarea pinului 13 ca pin de ieșire
+config = {     
+    "apiKey": "AIzaSyCRj5uTdKmrHGtipxsJZQzrMM_GVHSOTng",
+    "authDomain": "aplicatiepentrulicenta-2de16.firebaseapp.com",
+    "databaseURL": "https://aplicatiepentrulicenta-2de16-default-rtdb.firebaseio.com",
+    "projectId": "aplicatiepentrulicenta-2de16",                                        #configurarea rutei către proiectul creat în Firebase
+    "storageBucket": "aplicatiepentrulicenta-2de16.appspot.com",
+    "messagingSenderId": "873317189620",
+    "appId": "1:873317189620:web:8e9b308566dd2785ce9ba1",
+    "measurementId": "G-JRRGKPF1TW" }
+firebase = pyrebase.initialize_app(config) #sincornizarea proiectului Firebase cu dispozitivul Raspberry Pi
+cap = cv2.VideoCapture(0) #inițializarea camerei video
+pwm = GPIO.PWM(13,50) #inițializarea servomotorului pe pinul 13 cu frecvența de 50Hz
+pwm.start(0) #pornirea servomotorului
+while True:   #bucla infinită
+    sensor1= GPIO.input(17) #pornirea primului senzor
+    sensor2= GPIO.input(27) #pornirea celui de-al doilea senzor
+    database = firebase.database() #inițializarea bazei de date
+    loc = database.child("Parcare").child("Locuri de parcare").child("Locul 1").child("Rezervat") #ruta către data Rezervat a Locului 1
+    loc1 = loc.get().val() #preluarea valorii datei Rezervat
+    locul1= database.child("Parcare").child("Locuri de parcare").child("Locul 1").child("Status")#ruta către data Status a Locului 1
+    if loc1==0 or loc1==2: #condiția ca data Rezervat a locului 1 să fie 0 sau 2
+        if sensor1==1: #condiția ca senzorul 1 să fie inactiv
+            locul1.set("Liber") #setarea valorii datei Status a Locului 1 cu "Liber"
+        elif sensor1==0: #condiția ca senzorul 1 sa fie activ
+            locul1.set("Ocupat") #setarea valorii datei Status a Locului 1 cu "Ocupat"
+    elif loc1 ==1: #condiția ca data Rezervat a locului 1 să fie 1
+        if sensor1 == 0: #condiția ca senzorul 1 sa fie activ
+            locul1.set("Ocupat") #setarea valorii datei Status a Locului 1 cu "Ocupat"
+            database.child("Parcare").child("Locuri de parcare").child("Locul 1").child("Rezervat").set(2) #setarea valorii datei Rezervat a Locului 1 cu valoarea 2
+        else:
+            locul1.set("Rezervat") #setarea valorii datei Status a Locului 1 cu "Rezervat"
+    locc = database.child("Parcare").child("Locuri de parcare").child("Locul 2").child("Rezervat")
+    loc2 = locc.get().val()
+    locul2= database.child("Parcare").child("Locuri de parcare").child("Locul 2").child("Status")
+    if loc2== 0 or loc2==2:  #condiția ca data Rezervat a locului 2 să fie 0 sau 2
+        if sensor2==1:  #condiția ca senzorul 2 să fie inactiv
+            locul2.set("Liber") #setarea valorii datei Status a Locului 2 cu "Liber"
+        elif sensor2==0: #condiția ca senzorul 2 sa fie activ
+            locul2.set("Ocupat") #setarea valorii datei Status a Locului 2 cu "Ocupat"
+    elif loc2 ==1: #condiția ca data Rezervat a locului 2 să fie 1
+        if sensor2 == 0: #condiția ca senzorul 2 sa fie activ
+            locul2.set("Ocupat") #setarea valorii datei Status a Locului 2 cu "Ocupat"
+            database.child("Parcare").child("Locuri de parcare").child("Locul 2").child("Rezervat").set(2) #setarea valorii datei Rezervat a Locului 2 cu valoarea 2
+        else:
+            locul2.set("Rezervat") #setarea valorii datei Status a Locului 1 cu "Rezervat"
+    _,img = cap.read()
+    imaginealbnegru = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #transfomarea imaginii în alb negru
+    for qrcode in decode(img): #scanarea codului QR
+        mydata = qrcode.data.decode('utf-8') #decodificarea textului din codul QR
+        print("Intrare: "+mydata) #afișarea textului din codul QR
+        if(mydata == "Deschis"): #condiția ca textul găsit în urma scanării codului QR să fie "Deschis"
+            database.child("Parcare").child("Intrare").set(mydata) #setarea valorii datei Intrare cu textul găsit în urma scanării codului QR
+    cv2.imshow("Frame",imaginealbnegru) #afișarea imaginii într-o fereastră numită Frame
+    cv2.waitKey(1)
+    if database.child("Parcare").child("Intrare").get().val() == "Deschis": #condiția ca valoarea datei Intrare să fie "Deschis"
+        pwm.ChangeDutyCycle(12.5) #comandarea sevomotorului la 90 de grade
+        sleep(15) #se așteaptă 15 secunde
+        database.child("Parcare").child("Intrare").set("Inchis") #setarea valorii datei Intrare cu "Inchis"
+    elif database.child("Parcare").child("Intrare").get().val() == "Inchis": #condiția ca valoarea datei Intrare să fie "Inchis"
+        pwm.ChangeDutyCycle(7.5) #comandarea sevomotorului la -90 de grade
