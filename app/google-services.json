@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "873317189620",
+    "project_id": "aplicatiepentrulicenta-2de16",
+    "storage_bucket": "aplicatiepentrulicenta-2de16.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:873317189620:android:1c35981f8439fa2ece9ba1",
+        "android_client_info": {
+          "package_name": "com.example.aplicatiemonitorizarelocuriparcare"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "873317189620-at00ims20q065ovo3pa7f9hq6ggiihip.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyACfx-x5xwbWmBfEOgZ54v2T1XU2vjuyfk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "873317189620-at00ims20q065ovo3pa7f9hq6ggiihip.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
